@@ -20,8 +20,8 @@ type Config struct {
 
 func NewClient(config Config) *Client {
 	return &Client{
-		googleURL:    "https://www.googleapis.com/oauth2/v3/userinfo?access_token=",
-		facebookURL:  "https://graph.facebook.com/me?&fields=email,name&access_token=",
+		googleURL:    "https://www.googleapis.com/oauth2/v3/userinfo",
+		facebookURL:  "https://graph.facebook.com/me",
 		microsoftURL: "https://graph.microsoft.com/v1.0/me",
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
@@ -30,7 +30,7 @@ func NewClient(config Config) *Client {
 }
 
 func (c *Client) Google(token *string) (*GooglePayload, error) {
-	res, err := c.httpClient.Get(c.googleURL + *token)
+	res, err := c.httpClient.Get(c.googleURL + "?access_token=" + *token)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *Client) Google(token *string) (*GooglePayload, error) {
 }
 
 func (c *Client) Facebook(token *string) (*FacebookPayload, error) {
-	res, err := c.httpClient.Get(c.facebookURL + *token)
+	res, err := c.httpClient.Get(c.facebookURL + "?fields=email,name&access_token=" + *token)
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +86,7 @@ func (c *Client) Microsoft(token *string) (*MicrosoftPayload, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Authorization", "Bearer "+*token)
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
