@@ -7,7 +7,13 @@ import (
 	"time"
 )
 
-type Client struct {
+type Client interface {
+	Google(token *string) (*GooglePayload, error)
+	Facebook(token *string) (*FacebookPayload, error)
+	Microsoft(token *string) (*MicrosoftPayload, error)
+}
+
+type client struct {
 	googleURL    string
 	facebookURL  string
 	microsoftURL string
@@ -18,8 +24,8 @@ type Config struct {
 	Timeout time.Duration
 }
 
-func NewClient(config Config) *Client {
-	return &Client{
+func NewClient(config Config) Client {
+	return &client{
 		googleURL:    "https://www.googleapis.com/oauth2/v3/userinfo",
 		facebookURL:  "https://graph.facebook.com/me",
 		microsoftURL: "https://graph.microsoft.com/v1.0/me",
@@ -29,7 +35,7 @@ func NewClient(config Config) *Client {
 	}
 }
 
-func (c *Client) Google(token *string) (*GooglePayload, error) {
+func (c *client) Google(token *string) (*GooglePayload, error) {
 	res, err := c.httpClient.Get(c.googleURL + "?access_token=" + *token)
 	if err != nil {
 		return nil, err
@@ -55,7 +61,7 @@ func (c *Client) Google(token *string) (*GooglePayload, error) {
 	return payload, nil
 }
 
-func (c *Client) Facebook(token *string) (*FacebookPayload, error) {
+func (c *client) Facebook(token *string) (*FacebookPayload, error) {
 	res, err := c.httpClient.Get(c.facebookURL + "?fields=email,name&access_token=" + *token)
 	if err != nil {
 		return nil, err
@@ -81,7 +87,7 @@ func (c *Client) Facebook(token *string) (*FacebookPayload, error) {
 	return payload, nil
 }
 
-func (c *Client) Microsoft(token *string) (*MicrosoftPayload, error) {
+func (c *client) Microsoft(token *string) (*MicrosoftPayload, error) {
 	req, err := http.NewRequest(http.MethodGet, c.microsoftURL, nil)
 	if err != nil {
 		return nil, err
