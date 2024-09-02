@@ -18,7 +18,7 @@ import (
     "log"
     "time"
 
-    "github.com/radulucut/oauth/v2"
+    "github.com/radulucut/oauth"
 )
 
 func main() {
