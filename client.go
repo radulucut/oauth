@@ -1,16 +1,15 @@
 package oauth
 
 import (
-	"encoding/json"
-	"io"
+	"context"
 	"net/http"
 	"time"
 )
 
 type Client interface {
-	Google(token *string) (*GooglePayload, error)
-	Facebook(token *string) (*FacebookPayload, error)
-	Microsoft(token *string) (*MicrosoftPayload, error)
+	Google(ctx context.Context, token string) (*GooglePayload, error)
+	Facebook(ctx context.Context, token string) (*FacebookPayload, error)
+	Microsoft(ctx context.Context, token string) (*MicrosoftPayload, error)
 }
 
 type client struct {
@@ -33,87 +32,4 @@ func NewClient(config Config) Client {
 			Timeout: config.Timeout,
 		},
 	}
-}
-
-func (c *client) Google(token *string) (*GooglePayload, error) {
-	res, err := c.httpClient.Get(c.googleURL + "?access_token=" + *token)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	b, err := io.ReadAll(io.LimitReader(res.Body, 1<<20)) // 1MB
-	if err != nil {
-		return nil, err
-	}
-	if res.StatusCode != http.StatusOK {
-		rErr := &GoogleError{}
-		err = json.Unmarshal(b, rErr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, rErr
-	}
-	payload := &GooglePayload{}
-	err = json.Unmarshal(b, payload)
-	if err != nil {
-		return nil, err
-	}
-	return payload, nil
-}
-
-func (c *client) Facebook(token *string) (*FacebookPayload, error) {
-	res, err := c.httpClient.Get(c.facebookURL + "?fields=email,name&access_token=" + *token)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	b, err := io.ReadAll(io.LimitReader(res.Body, 1<<20)) // 1MB
-	if err != nil {
-		return nil, err
-	}
-	if res.StatusCode != http.StatusOK {
-		rErr := &FacebookError{}
-		err = json.Unmarshal(b, rErr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, rErr
-	}
-	payload := &FacebookPayload{}
-	err = json.Unmarshal(b, payload)
-	if err != nil {
-		return nil, err
-	}
-	return payload, nil
-}
-
-func (c *client) Microsoft(token *string) (*MicrosoftPayload, error) {
-	req, err := http.NewRequest(http.MethodGet, c.microsoftURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Authorization", "Bearer "+*token)
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	b, err := io.ReadAll(io.LimitReader(res.Body, 1<<20)) // 1MB
-	if err != nil {
-		return nil, err
-	}
-	if res.StatusCode != http.StatusOK {
-		rErr := &MicrosoftError{}
-		err = json.Unmarshal(b, rErr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, rErr
-	}
-	payload := &MicrosoftPayload{}
-	err = json.Unmarshal(b, payload)
-	if err != nil {
-		return nil, err
-	}
-	return payload, nil
 }
